@@ -168,6 +168,16 @@
             padding: 20px;
             border-radius: 8px;
             background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .visualization-section > h2 {
+            align-self: flex-start;
+        }
+        .visualization-section svg {
+            display: block;
+            margin: 0 auto;
         }
 
         h2 {
@@ -583,11 +593,11 @@
         function coordsPixels(selector) {
             var txt = d3.select(selector).append('text');
             var svg = d3.select(selector).attr('cursor', 'crosshair')
-                .on('mousemove', function() {
-                    var pt = d3.mouse(svg.node());
+                .on('mousemove', function(event) {
+                    var pt = d3.pointer(event, svg.node());
                     txt.attr('x', 18+pt[0])
                         .attr('y', 6+pt[1])
-                        .text('' + pt[0] + ',' + pt[1]);
+                        .text('' + Math.round(pt[0]) + ',' + Math.round(pt[1]));
                 });
         }
 
@@ -603,8 +613,8 @@
                     .domain([0, 10, 50])
                     .range(["lime", "yellow", "blue"]);
 
-                var cs1 = drawCircles(svg1, data, d => d["A"], d => d["B"], sc1);
-                var cs2 = drawCircles(svg2, data, d => d["A"], d => d["B"], sc2);
+                var cs1 = drawCircles(svg1, data, d => +d["A"], d => +d["B"], sc1);
+                var cs2 = drawCircles(svg2, data, d => +d["A"], d => +d["B"], sc2);
 
                 svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
             });
@@ -625,40 +635,39 @@
 
         function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
             svg.attr("cursor", "crosshair")
-                .on("mousemove", function() {
-                    var pt = d3.mouse(svg.node());
+                .on("mousemove", function(event) {
+                    var pt = d3.pointer(event, svg.node());
                     cs1.attr("fill", function(d, i) {
-                        var r = Math.hypot(pt[0] - d3.select(this).attr("cx"),
-                            pt[1] - d3.select(this).attr("cy"));
+                        var r = Math.hypot(pt[0] - +d3.select(this).attr("cx"),
+                            pt[1] - +d3.select(this).attr("cy"));
                         data[i]["r"] = r;
                         return sc1(r);
-                    })
+                    });
                     cs2.attr("fill", (d, i) => sc2(data[i]["r"]));
                 })
                 .on("mouseleave", function() {
                     cs1.attr("fill", sc1(Infinity));
                     cs2.attr("fill", sc2(Infinity));
-                })
+                });
         }
 
         // Visualization 3: Drag and Drop
         function makeDragDrop() {
             const svg = d3.select("#dragdrop");
-
             svg.selectAll("circle")
                 .call(d3.drag()
-                .on("start", function() {
-                    d3.select(this).raise().attr("stroke", "black");
-                })
-                .on("drag", function() {
-                    d3.select(this)
-                    .attr("cx", d3.event.x)
-                    .attr("cy", d3.event.y);
-                })
-                .on("end", function() {
-                    d3.select(this).attr("stroke", null);
-                })
-            );
+                    .on("start", function(event) {
+                        d3.select(this).raise().attr("stroke", "black");
+                    })
+                    .on("drag", function(event) {
+                        d3.select(this)
+                            .attr("cx", event.x)
+                            .attr("cy", event.y);
+                    })
+                    .on("end", function() {
+                        d3.select(this).attr("stroke", null);
+                    })
+                );
         }
 
         // Visualization 4: Stagger
